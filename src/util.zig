@@ -10,7 +10,21 @@ var gpa_impl = std.heap.GeneralPurposeAllocator(.{}){};
 pub const gpa = gpa_impl.allocator();
 
 // Add utility functions here
-
+pub fn sortField(
+    comptime T: type,
+    comptime field: []const u8,
+    comptime func: fn(
+        void,
+        @TypeOf(@field(@as(T, undefined), field)),
+        @TypeOf(@field(@as(T, undefined), field)),
+    ) bool
+) fn(void, T, T) bool {
+    return struct {
+        fn lessThan(ctx: void, lhs: T, rhs: T) bool {
+            return func(ctx, @field(lhs, field), @field(rhs, field));
+        }
+    }.lessThan;
+}
 
 // Useful stdlib functions
 const tokenize = std.mem.tokenize;
