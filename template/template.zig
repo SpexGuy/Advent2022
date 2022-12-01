@@ -3,15 +3,38 @@ const Allocator = std.mem.Allocator;
 const List = std.ArrayList;
 const Map = std.AutoHashMap;
 const StrMap = std.StringHashMap;
-const BitSet = std.DynamicBitSet;
+const BitSet = std.StaticBitSet;
 
 const util = @import("util.zig");
 const gpa = util.gpa;
 
 const data = @embedFile("data/day$.txt");
 
+const Item = struct {
+    v: i64,
+
+};
+
 pub fn main() !void {
-    
+    var items_list = List(Item).init(gpa);
+    var lines = tokenize(u8, data, "\n\r");
+    while (lines.next()) |line| {
+        var parts = split(u8, line, " ");
+        const part0 = parts.next().?;
+
+        assert(parts.next() == null);
+
+        try items_list.append(.{
+            .v = try parseInt(i64, part0, 10),
+        });
+    }
+
+    const items = items_list.items;
+
+    // Do stuff
+    for (items) |it| {
+        _ = &it;
+    }
 }
 
 // Useful stdlib functions
@@ -41,6 +64,8 @@ const assert = std.debug.assert;
 const sort = std.sort.sort;
 const asc = std.sort.asc;
 const desc = std.sort.desc;
+
+const sortField = util.sortField;
 
 // Generated from template/template.zig.
 // Run `zig build generate` to update.
