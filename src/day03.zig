@@ -16,6 +16,9 @@ const Item = struct {
 };
 
 pub fn main() !void {
+    var part1: i64 = 0;
+    var part2: i64 = 0;
+
     var items_list = List(Item).init(gpa);
     var lines = tokenize(u8, data, "\n\r");
     while (lines.next()) |line| {
@@ -35,6 +38,8 @@ pub fn main() !void {
     for (items) |it| {
         _ = &it;
     }
+
+    print("part1: {}\npart2: {}\n", .{part1, part2});
 }
 
 // Useful stdlib functions
