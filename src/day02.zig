@@ -10,31 +10,54 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day02.txt");
 
-const Item = struct {
-    v: i64,
+const RPS = enum {
+    rock,
+    paper,
+    scissors,
+};
 
+const Item = struct {
+    in: RPS,
+    out: u2,
 };
 
 pub fn main() !void {
-    var items_list = List(Item).init(gpa);
-    var lines = tokenize(u8, data, "\n\r");
-    while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        const part0 = parts.next().?;
+    const items = blk: {
+        var items_list = List(Item).init(gpa);
+        var lines = tokenize(u8, data, "\n\r");
+        while (lines.next()) |line| {
+            assert(line.len == 3);
+            assert(line[1] == ' ');
 
-        assert(parts.next() == null);
+            try items_list.append(.{
+                .in = @intToEnum(RPS, @intCast(u2, line[0] - 'A')),
+                .out = @intCast(u2, line[2] - 'X'),
+            });
+        }
 
-        try items_list.append(.{
-            .v = try parseInt(i64, part0, 10),
-        });
-    }
+        break :blk items_list.items;
+    };
 
-    const items = items_list.items;
-
-    // Do stuff
+    var part1_score: u64 = 0;
+    var part2_score: u64 = 0;
     for (items) |it| {
-        _ = &it;
+        part1_score += score(it.in, @intToEnum(RPS, it.out));
+        const move_int = (@as(u32, @enumToInt(it.in)) + @as(u32, it.out) + 2) % 3;
+        const move = @intToEnum(RPS, @intCast(u2, move_int));
+        part2_score += score(it.in, move);
     }
+
+    print("part1: {}\npart2: {}\n", .{part1_score, part2_score});
+}
+
+fn score(them: RPS, you: RPS) u64 {
+    const them_int: u32 = @enumToInt(them);
+    const you_int: u32 = @enumToInt(you);
+    const win_part: u64 = if (them_int == you_int) @as(u64, 3)
+        else if (them_int + 2 == you_int or you_int + 1 == them_int) @as(u64, 0)
+        else @as(u64, 6);
+    const move_part = you_int + 1;
+    return win_part + move_part;
 }
 
 // Useful stdlib functions
