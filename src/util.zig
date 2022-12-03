@@ -26,6 +26,26 @@ pub fn sortField(
     }.lessThan;
 }
 
+// [*]const Rucksack, 3 => [*]const [3]Rucksack
+// []const Rucksack, 3 => []const [3]Rucksack
+pub fn SliceGroup(comptime Slice: type, comptime group: usize) type {
+    var info = @typeInfo(Slice);
+    if (info != .Pointer)
+        @compileError("sliceGroup must take slice, found "++@typeName(Slice));
+    if (info.Pointer.sentinel != null)
+        @compileError("sliceGroup cannot accept slice with sentinel, found "++@typeName(Slice));
+    info.Pointer.child = [group]info.Pointer.child;
+    return @Type(info);
+}
+
+pub fn sliceGroup(slice: anytype, comptime group: usize) SliceGroup(@TypeOf(slice), group) {
+    const sliceInfo = @typeInfo(@TypeOf(slice));
+    if (sliceInfo.Pointer.size != .Slice)
+        @compileError("sliceGroup must take slice, found "++@typeName(@TypeOf(slice)));
+    const ptr = @ptrCast(SliceGroup(@TypeOf(slice.ptr), group), slice.ptr);
+    return ptr[0..@divExact(slice.len, group)];
+}
+
 // Useful stdlib functions
 const tokenize = std.mem.tokenize;
 const split = std.mem.split;
