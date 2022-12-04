@@ -28,8 +28,7 @@ pub fn main() !void {
             min1 >= min0 and max1 <= max0,
         );
         part2 += @boolToInt(
-            min0 <= max1 and max0 >= min1 or
-            max1 <= min0 and min1 >= max0,
+            min0 <= max1 and max0 >= min1,
         );
     }
 
