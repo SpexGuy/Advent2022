@@ -23,12 +23,12 @@ pub fn main() !void {
     var lines = tokenize(u8, data, "\n\r");
     while (lines.next()) |line| {
         var parts = split(u8, line, " ");
-        const part0 = parts.next().?;
+        const v = parts.next().?;
 
         assert(parts.next() == null);
 
         try items_list.append(.{
-            .v = try parseInt(i64, part0, 10),
+            .v = try parseInt(i64, v, 10),
         });
     }
 
