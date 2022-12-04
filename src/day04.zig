@@ -10,33 +10,27 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day04.txt");
 
-const Item = struct {
-    v: i64,
-
-};
-
 pub fn main() !void {
     var part1: i64 = 0;
     var part2: i64 = 0;
 
-    var items_list = List(Item).init(gpa);
     var lines = tokenize(u8, data, "\n\r");
     while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        const v = parts.next().?;
-
+        var parts = tokenize(u8, line, "-,");
+        const min0 = try parseInt(i64, parts.next().?, 10);
+        const max0 = try parseInt(i64, parts.next().?, 10);
+        const min1 = try parseInt(i64, parts.next().?, 10);
+        const max1 = try parseInt(i64, parts.next().?, 10);
         assert(parts.next() == null);
 
-        try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
-        });
-    }
-
-    const items = items_list.items;
-
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
+        part1 += @boolToInt(
+            min0 >= min1 and max0 <= max1 or
+            min1 >= min0 and max1 <= max0,
+        );
+        part2 += @boolToInt(
+            min0 <= max1 and max0 >= min1 or
+            max1 <= min0 and min1 >= max0,
+        );
     }
 
     print("part1: {}\npart2: {}\n", .{part1, part2});
