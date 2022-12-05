@@ -10,36 +10,103 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day05.txt");
 
-const Item = struct {
-    v: i64,
+const NumStacks = 9;
 
+const StackState = struct {
+    stacks: [NumStacks]std.ArrayListUnmanaged(u8),
+
+    pub fn init() StackState {
+        return .{
+            .stacks = [_]std.ArrayListUnmanaged(u8){ .{} } ** NumStacks,
+        };
+    }
+
+    pub fn clone(self: *StackState) !StackState {
+        var result = StackState.init();
+        errdefer result.deinit();
+        for (self.stacks) |*stack, i| {
+            result.stacks[i] = try stack.clone(gpa);
+        }
+        return result;
+    }
+
+    pub fn deinit(self: *StackState) void {
+        for (self.stacks) |*stack| {
+            stack.deinit(gpa);
+        }
+    }
+
+    pub fn move(self: *StackState, from_id: usize, to_id: usize, stack_size: usize) !void {
+        const from = &self.stacks[from_id];
+        const to = &self.stacks[to_id];
+
+        try to.appendSlice(gpa, from.items[from.items.len-stack_size..]);
+        from.shrinkRetainingCapacity(from.items.len-stack_size);
+    }
+
+    pub fn dump(self: StackState) void {
+        var max_len: usize = 0;
+        for (self.stacks) |*s| {max_len = max(max_len, s.items.len); }
+        while (max_len > 0) {
+            max_len -= 1;
+            for (self.stacks) |*s| {
+                if (s.items.len > max_len) {
+                    print(" {c}", .{s.items[max_len]});
+                } else {
+                    print("  ", .{});
+                }
+            }
+            print("\n", .{});
+        }
+    }
+
+    pub fn writeCaps(self: StackState) void {
+        var chars: [NumStacks]u8 = undefined;
+        for (self.stacks) |*stack, i| {
+            chars[i] = stack.items[stack.items.len-1];
+        }
+        print("{s}", .{&chars});
+    }
 };
 
 pub fn main() !void {
-    var part1: i64 = 0;
-    var part2: i64 = 0;
+    var part1 = StackState.init();
 
-    var items_list = List(Item).init(gpa);
-    var lines = tokenize(u8, data, "\n\r");
+    var lines = tokenize(u8, data, "\n");
     while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        const v = parts.next().?;
+        if (line[1] == '1') break;
+        var i: usize = 0;
+        while (i < NumStacks) : (i += 1) {
+            const id = i * 4 + 1;
+            if (line[id] != ' ') {
+                try part1.stacks[i].insert(gpa, 0, line[id]);
+            }
+        }
+    }
 
+    var part2 = try part1.clone();
+
+    while (lines.next()) |line| {
+        var parts = tokenize(u8, line, "feet vroom");
+        const number = try parseInt(usize, parts.next().?, 10);
+        const from = (try parseInt(usize, parts.next().?, 10)) - 1;
+        const to = (try parseInt(usize, parts.next().?, 10)) - 1;
         assert(parts.next() == null);
+        assert(to != from);
 
-        try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
-        });
+        var i: usize = 0;
+        while (i < number) : (i += 1) {
+            try part1.move(from, to, 1);
+        }
+
+        try part2.move(from, to, number);
     }
 
-    const items = items_list.items;
-
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
-    }
-
-    print("part1: {}\npart2: {}\n", .{part1, part2});
+    print("part1: ", .{});
+    part1.writeCaps();
+    print("\npart2: ", .{});
+    part2.writeCaps();
+    print("\n", .{});
 }
 
 // Useful stdlib functions
