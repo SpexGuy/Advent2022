@@ -75,13 +75,17 @@ pub fn main() !void {
     var lines = tokenize(u8, data, "\n");
     while (lines.next()) |line| {
         if (line[1] == '1') break;
-        var i: usize = 0;
-        while (i < NumStacks) : (i += 1) {
-            const id = i * 4 + 1;
-            if (line[id] != ' ') {
-                try part1.stacks[i].insert(gpa, 0, line[id]);
+
+        for (part1.stacks) |*stack, i| {
+            const idx = i * 4 + 1;
+            if (line[idx] != ' ') {
+                try stack.append(gpa, line[idx]);
             }
         }
+    }
+
+    for (part1.stacks) |*stack| {
+        reverse(u8, stack.items);
     }
 
     var part2 = try part1.clone();
@@ -121,6 +125,7 @@ const lastIndexOfStr = std.mem.lastIndexOfLinear;
 const trim = std.mem.trim;
 const sliceMin = std.mem.min;
 const sliceMax = std.mem.max;
+const reverse = std.mem.reverse;
 
 const parseInt = std.fmt.parseInt;
 const parseFloat = std.fmt.parseFloat;
