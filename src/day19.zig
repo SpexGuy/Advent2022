@@ -58,9 +58,9 @@ const sliceMax = std.mem.max;
 const parseInt = std.fmt.parseInt;
 const parseFloat = std.fmt.parseFloat;
 
-const min = std.math.min;
+const min2 = std.math.min;
 const min3 = std.math.min3;
-const max = std.math.max;
+const max2 = std.math.max;
 const max3 = std.math.max3;
 
 const print = std.debug.print;
