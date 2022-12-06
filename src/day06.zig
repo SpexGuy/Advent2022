@@ -10,34 +10,28 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day06.txt");
 
-const Item = struct {
-    v: i64,
-
-};
+fn checkNoDuplicates(str: []const u8) bool {
+    var set: std.StaticBitSet(26) = .{ .mask = 0 };
+    for (str) |chr| {
+        const id = chr - 'a';
+        if (set.isSet(id)) return false;
+        set.set(id);
+    }
+    return true;
+}
 
 pub fn main() !void {
-    var part1: i64 = 0;
-    var part2: i64 = 0;
+    var i: usize = 0;
 
-    var items_list = List(Item).init(gpa);
-    var lines = tokenize(u8, data, "\n\r");
-    while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        const v = parts.next().?;
+    const part1 = while (true) : (i += 1) {
+        if (checkNoDuplicates(data[i..][0..4]))
+            break i + 4;
+    } else unreachable;
 
-        assert(parts.next() == null);
-
-        try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
-        });
-    }
-
-    const items = items_list.items;
-
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
-    }
+    const part2 = while (true) : (i += 1) {
+        if (checkNoDuplicates(data[i..][0..14]))
+            break i + 14;
+    } else unreachable;
 
     print("part1: {}\npart2: {}\n", .{part1, part2});
 }
