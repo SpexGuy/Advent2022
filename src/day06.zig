@@ -10,26 +10,16 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day06.txt");
 
-fn checkNoDuplicates(str: []const u8) bool {
-    var set: std.StaticBitSet(26) = .{ .mask = 0 };
-    for (str) |chr| {
-        const id = chr - 'a';
-        if (set.isSet(id)) return false;
-        set.set(id);
-    }
-    return true;
-}
-
 pub fn main() !void {
     var i: usize = 0;
 
     const part1 = while (true) : (i += 1) {
-        if (checkNoDuplicates(data[i..][0..4]))
+        if (!util.containsDuplicates(data[i..][0..4]))
             break i + 4;
     } else unreachable;
 
     const part2 = while (true) : (i += 1) {
-        if (checkNoDuplicates(data[i..][0..14]))
+        if (!util.containsDuplicates(data[i..][0..14]))
             break i + 14;
     } else unreachable;
 
