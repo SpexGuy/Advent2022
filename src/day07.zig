@@ -10,33 +10,59 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day07.txt");
 
-const Item = struct {
-    v: i64,
-
-};
-
 pub fn main() !void {
-    var part1: i64 = 0;
-    var part2: i64 = 0;
+    var dir_sizes = std.ArrayList(usize).init(gpa);
+    var dir_stack = std.ArrayList(usize).init(gpa); // indices into dir_sizes
 
-    var items_list = List(Item).init(gpa);
-    var lines = tokenize(u8, data, "\n\r");
+    try dir_sizes.append(0); // for root
+
+    var lines = tokenize(u8, data, "\n");
     while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        const v = parts.next().?;
-
-        assert(parts.next() == null);
-
-        try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
-        });
+        if (std.mem.startsWith(u8, line, "$ cd ")) {
+            const cd_dir = line["$ cd ".len..];
+            if (std.mem.eql(u8, cd_dir, "/")) {
+                dir_stack.shrinkRetainingCapacity(0);
+                try dir_stack.append(0);
+            } else if (std.mem.eql(u8, cd_dir, "..")) {
+                _ = dir_stack.pop();
+            } else {
+                // Each directory is only cd'd into once, so we can
+                // ignore the ls dir entries and just assume they
+                // exist on cd.
+                const new_index = dir_sizes.items.len;
+                try dir_sizes.append(0);
+                try dir_stack.append(new_index);
+            }
+        } else if (line[0] >= '0' and line[0] <= '9') {
+            // Add file size to all directories on the current stack
+            var parts = split(u8, line, " ");
+            const size = try parseInt(usize, parts.next().?, 10);
+            _ = parts.next().?; // file name
+            assert(parts.next() == null);
+            for (dir_stack.items) |idx| {
+                dir_sizes.items[idx] += size;
+            }
+        } else if (std.mem.startsWith(u8, line, "$ ls")) {
+        } else if (std.mem.startsWith(u8, line, "dir ")) {
+        } else {
+            print("Unknown line: {s}\n", .{line});
+            assert(false);
+        }
     }
 
-    const items = items_list.items;
+    const needed_fit = 70000000 - 30000000;
+    const total_size = dir_sizes.items[0];
+    const need_to_delete = total_size - needed_fit;
 
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
+    var part1: usize = 0;
+    var part2 = total_size;
+    for (dir_sizes.items) |size| {
+        if (size <= 100000) {
+            part1 += size;
+        }
+        if (size >= need_to_delete and size < part2) {
+            part2 = size;
+        }
     }
 
     print("part1: {}\npart2: {}\n", .{part1, part2});
