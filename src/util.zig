@@ -57,6 +57,89 @@ pub fn containsDuplicates(str: []const u8) bool {
     return false;
 }
 
+pub const Grid = struct {
+    const Self = @This();
+
+    data: []u8,
+    width: usize,
+    height: usize,
+    pitch: usize,
+    offset: usize,
+    border: usize,
+
+    pub fn indexOf(self: Self, x: usize, y: usize) usize {
+        return y * self.pitch + x + self.offset;
+    }
+
+    pub fn at(self: Self, x: usize, y: usize) u8 {
+        return self.data[self.indexOf(x, y)];
+    }
+
+    pub fn set(self: Self, x: usize, y: usize, value: u8) void {
+        self.data[self.indexOf(x, y)] = value;
+    }
+
+    pub fn ptrTo(self: Self, x: usize, y: usize) *u8 {
+        return &self.data[self.indexOf(x, y)];
+    }
+
+    pub fn row(self: Self, y: usize) []u8 {
+        return self.data[self.indexOf(0, y)..][0..self.width];
+    }
+
+    pub fn rowWithBorder(self: Self, y: usize) []u8 {
+        return self.data[self.indexOf(0, y) - self.border..][0..self.width + 2*self.border];
+    }
+
+    pub fn dump(self: Self) void {
+        print("{s}\n", .{self.data});
+    }
+
+    pub fn load(
+        in_data: []const u8,
+        border: u8,
+        border_size: usize,
+    ) !Self {
+        const width = std.mem.indexOfScalar(u8, in_data, '\n').?;
+        const in_pitch = width + 1;
+        const height = @divExact(in_data.len, in_pitch);
+        const pitch = width + 2*border_size + 1;
+        const offset = border_size * pitch + border_size;
+        const allocated_height = height + 2*border_size;
+        const grid_data = try gpa.alloc(u8, pitch * allocated_height);
+        if (border_size != 0) {
+            std.mem.set(u8, grid_data, border);
+        }
+        var y: usize = 0;
+        while (y < height) : (y += 1) {
+            std.mem.copy(
+                u8,
+                grid_data[y * pitch + offset..][0..width],
+                in_data[y * in_pitch..][0..width],
+            );
+        }
+        var linebrk = pitch - 1;
+        while (linebrk < grid_data.len) : (linebrk += pitch) {
+            grid_data[linebrk] = '\n';
+        }
+
+        return Self{
+            .data = grid_data,
+            .width = width,
+            .height = height,
+            .pitch = pitch,
+            .offset = offset,
+            .border = border_size,
+        };
+    }
+
+    pub fn clone(self: Self) Self {
+        var new = self;
+        new.data = gpa.dupe(u8, self.data);
+        return new;
+    }
+};
+
 // Useful stdlib functions
 const tokenize = std.mem.tokenize;
 const split = std.mem.split;

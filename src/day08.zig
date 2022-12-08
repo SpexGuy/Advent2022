@@ -10,33 +10,130 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day08.txt");
 
-const Item = struct {
-    v: i64,
+const counted: u8 = 0x80;
+const value_mask: u8 = 0x7F;
 
-};
+fn scenicScore(grid: Grid, x: usize, y: usize) i64 {
+    var total: usize = 1;
+
+    const tree = grid.at(x, y) & value_mask;
+    {
+        var tx = x;
+        while (tx > 0) {
+            tx -= 1;
+            const nh = grid.at(tx, y) & value_mask;
+            if (nh >= tree) break;
+        }
+        total *= (x - tx);
+    }
+    {
+        var tx = x;
+        while (tx < grid.width-1) {
+            tx += 1;
+            const nh = grid.at(tx, y) & value_mask;
+            if (nh >= tree) break;
+        }
+        total *= (tx - x);
+    }
+    {
+        var ty = y;
+        while (ty > 0) {
+            ty -= 1;
+            const nh = grid.at(x, ty) & value_mask;
+            if (nh >= tree) break;
+        }
+        total *= (y - ty);
+    }
+    {
+        var ty = y;
+        while (ty < grid.height-1) {
+            ty += 1;
+            const nh = grid.at(x, ty) & value_mask;
+            if (nh >= tree) break;
+        }
+        total *= (ty - y);
+    }
+    return @intCast(i64, total);
+}
 
 pub fn main() !void {
+    const grid = try Grid.load(data, '9', 0);
+
     var part1: i64 = 0;
-    var part2: i64 = 0;
+    {
+        var x: usize = 0;
+        while (x < grid.width) : (x += 1) {
+            var max_found: u8 = 0;
+            var y: usize = 0;
+            while (y < grid.height) : (y += 1) {
+                const tree = grid.at(x, y);
+                if (tree & value_mask > max_found) {
+                    max_found = tree & value_mask;
+                    if (tree & counted == 0) {
+                        part1 += 1;
+                        grid.set(x, y, tree | counted);
+                    }
+                }
+            }
 
-    var items_list = List(Item).init(gpa);
-    var lines = tokenize(u8, data, "\n\r");
-    while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        const v = parts.next().?;
-
-        assert(parts.next() == null);
-
-        try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
-        });
+            max_found = 0;
+            while (y > 0) {
+                y -= 1;
+                const tree = grid.at(x, y);
+                if (tree & value_mask > max_found) {
+                    max_found = tree & value_mask;
+                    if (tree & counted == 0) {
+                        part1 += 1;
+                        grid.set(x, y, tree | counted);
+                    }
+                }
+            }
+        }
     }
 
-    const items = items_list.items;
+    {
+        var y: usize = 0;
+        while (y < grid.height) : (y += 1) {
+            var max_found: u8 = 0;
+            var x: usize = 0;
+            while (x < grid.width) : (x += 1) {
+                const tree = grid.at(x, y);
+                if (tree & value_mask > max_found) {
+                    max_found = tree & value_mask;
+                    if (tree & counted == 0) {
+                        part1 += 1;
+                        grid.set(x, y, tree | counted);
+                    }
+                }
+            }
 
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
+            max_found = 0;
+            while (x > 0) {
+                x -= 1;
+                const tree = grid.at(x, y);
+                if (tree & value_mask > max_found) {
+                    max_found = tree & value_mask;
+                    if (tree & counted == 0) {
+                        part1 += 1;
+                        grid.set(x, y, tree | counted);
+                    }
+                }
+            }
+        }
+    }
+
+    var part2: i64 = 0;
+    {
+        var y: usize = 0;
+        while (y < grid.height) : (y += 1) {
+            var x: usize = 0;
+            while (x < grid.width) : (x += 1) {
+                const score = scenicScore(grid, x, y);
+                if (score > part2) {
+                    part2 = score;
+                }
+            }
+        }
     }
 
     print("part1: {}\npart2: {}\n", .{part1, part2});
@@ -72,6 +169,7 @@ const desc = std.sort.desc;
 
 const sortField = util.sortField;
 const sliceGroup = util.sliceGroup;
+const Grid = util.Grid;
 
 // Generated from template/template.zig.
 // Run `zig build generate` to update.
