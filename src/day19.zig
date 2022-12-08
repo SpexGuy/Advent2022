@@ -72,6 +72,7 @@ const desc = std.sort.desc;
 
 const sortField = util.sortField;
 const sliceGroup = util.sliceGroup;
+const Grid = util.Grid;
 
 // Generated from template/template.zig.
 // Run `zig build generate` to update.
