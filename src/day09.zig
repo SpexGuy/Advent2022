@@ -10,34 +10,51 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day09.txt");
 
-const Item = struct {
-    v: i64,
-
-};
+const Point = struct { x: i64, y: i64 };
 
 pub fn main() !void {
-    var part1: i64 = 0;
-    var part2: i64 = 0;
+    var part1_locs = std.AutoHashMap(Point, void).init(gpa);
+    var part2_locs = std.AutoHashMap(Point, void).init(gpa);
 
-    var items_list = List(Item).init(gpa);
+    var knots: [10]Point = [_]Point{ .{ .x = 0, .y = 0 } } ** 10;
+    try part1_locs.put(knots[0], {});
+    try part2_locs.put(knots[0], {});
+
     var lines = tokenize(u8, data, "\n\r");
     while (lines.next()) |line| {
         var parts = split(u8, line, " ");
-        const v = parts.next().?;
-
+        const dir = parts.next().?;
+        assert(dir.len == 1);
+        const len = try parseInt(u64, parts.next().?, 10);
         assert(parts.next() == null);
 
-        try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
-        });
+        var i: u64 = 0;
+        while (i < len) : (i += 1) {
+            switch (dir[0]) {
+                'L' => knots[0].x -= 1,
+                'R' => knots[0].x += 1,
+                'U' => knots[0].y += 1,
+                'D' => knots[0].y -= 1,
+                else => unreachable,
+            }
+            var k: usize = 0;
+            while (k < 9) : (k += 1) {
+                const head_pos = &knots[k];
+                const tail_pos = &knots[k+1];
+                const dx = head_pos.x - tail_pos.x;
+                const dy = head_pos.y - tail_pos.y;
+                if (abs(dx) >= 2 or abs(dy) >= 2) {
+                    tail_pos.x += std.math.clamp(dx, -1, 1);
+                    tail_pos.y += std.math.clamp(dy, -1, 1);
+                } else break;
+            }
+            try part1_locs.put(knots[1], {});
+            try part2_locs.put(knots[9], {});
+        }
     }
 
-    const items = items_list.items;
-
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
-    }
+    const part1 = part1_locs.count();
+    const part2 = part2_locs.count();
 
     print("part1: {}\npart2: {}\n", .{part1, part2});
 }
@@ -70,6 +87,7 @@ const sort = std.sort.sort;
 const asc = std.sort.asc;
 const desc = std.sort.desc;
 
+const abs = util.abs;
 const sortField = util.sortField;
 const sliceGroup = util.sliceGroup;
 const Grid = util.Grid;

@@ -57,6 +57,10 @@ pub fn containsDuplicates(str: []const u8) bool {
     return false;
 }
 
+pub fn abs(x: anytype) @TypeOf(x) {
+    return if (x < 0) -x else x;
+}
+
 pub const Grid = struct {
     const Self = @This();
 
