@@ -70,6 +70,7 @@ const sort = std.sort.sort;
 const asc = std.sort.asc;
 const desc = std.sort.desc;
 
+const abs = util.abs;
 const sortField = util.sortField;
 const sliceGroup = util.sliceGroup;
 const Grid = util.Grid;
