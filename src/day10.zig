@@ -10,36 +10,45 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day10.txt");
 
-const Item = struct {
-    v: i64,
-
+const Cpu = struct {
+    x: i64 = 1,
+    cycle: i64 = 1,
 };
+
+fn incCycle(cpu: *Cpu, part1: *i64, part2: *std.ArrayList(u8)) !void {
+    const pos = @mod(cpu.cycle - 1, 40);
+    if (pos == 19) part1.* += cpu.x * cpu.cycle;
+    const sprite_min = cpu.x - 1;
+    const sprite_max = cpu.x + 1;
+    try part2.append(
+        if (pos >= sprite_min and pos <= sprite_max) '#'
+        else ' ');
+    if (pos == 39) try part2.append('\n');
+    cpu.cycle += 1;
+}
 
 pub fn main() !void {
     var part1: i64 = 0;
-    var part2: i64 = 0;
+    var part2 = std.ArrayList(u8).init(gpa);
 
-    var items_list = List(Item).init(gpa);
+    var cpu = Cpu{};
+
     var lines = tokenize(u8, data, "\n\r");
     while (lines.next()) |line| {
         var parts = split(u8, line, " ");
-        const v = parts.next().?;
-
+        const inst = parts.next().?;
+        if (std.mem.eql(u8, inst, "addx")) {
+            const val = try parseInt(i64, parts.next().?, 10);
+            try incCycle(&cpu, &part1, &part2);
+            try incCycle(&cpu, &part1, &part2);
+            cpu.x += val;
+        } else if (std.mem.eql(u8, inst, "noop")) {
+            try incCycle(&cpu, &part1, &part2);
+        } else assert(false);
         assert(parts.next() == null);
-
-        try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
-        });
     }
 
-    const items = items_list.items;
-
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
-    }
-
-    print("part1: {}\npart2: {}\n", .{part1, part2});
+    print("part1: {}\npart2:\n{s}", .{part1, part2.items});
 }
 
 // Useful stdlib functions
