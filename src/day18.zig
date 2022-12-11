@@ -71,6 +71,7 @@ const asc = std.sort.asc;
 const desc = std.sort.desc;
 
 const abs = util.abs;
+const expect = util.expect;
 const sortField = util.sortField;
 const sliceGroup = util.sliceGroup;
 const Grid = util.Grid;
