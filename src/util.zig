@@ -61,6 +61,14 @@ pub fn abs(x: anytype) @TypeOf(x) {
     return if (x < 0) -x else x;
 }
 
+pub fn expect(src: []const u8, expected: []const u8) ?[]const u8 {
+    if (std.mem.startsWith(u8, src, expected)) {
+        return src[expected.len..];
+    } else {
+        return null;
+    }
+}
+
 pub const Grid = struct {
     const Self = @This();
 
