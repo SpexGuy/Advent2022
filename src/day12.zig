@@ -10,37 +10,72 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day12.txt");
 
-const Item = struct {
-    v: i64,
-
+const Entry = struct {
+    index: usize,
+    distance: usize,
 };
 
 pub fn main() !void {
-    var part1: i64 = 0;
-    var part2: i64 = 0;
+    var grid = try Grid.load(data, '#', 1);
+    const start_idx = indexOf(u8, grid.data, 'S').?;
+    const end_idx = indexOf(u8, grid.data, 'E').?;
+    grid.data[start_idx] = 'a';
+    grid.data[end_idx] = 'z';
 
-    var items_list = List(Item).init(gpa);
-    var lines = tokenize(u8, data, "\n\r");
-    while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        const v = parts.next().?;
+    var best_dist = try gpa.alloc(usize, grid.data.len);
+    std.mem.set(usize, best_dist, ~@as(usize, 0));
+    best_dist[end_idx] = 0;
 
-        assert(parts.next() == null);
+    var prev = try gpa.alloc(usize, grid.data.len);
+    std.mem.set(usize, prev, 0);
 
-        try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
-        });
-    }
+    var visited = try std.DynamicBitSet.initEmpty(gpa, grid.data.len);
 
-    const items = items_list.items;
+    var queue = std.PriorityQueue(Entry, void, queueComp).init(gpa,{});
+    try queue.add(Entry{ .index = end_idx, .distance = 0 });
 
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
-    }
+    var part2: ?usize = null;
+    const part1 = while (true) {
+        const best = queue.remove();
+        if (visited.isSet(best.index)) continue;
+        visited.set(best.index);
 
-    print("part1: {}\npart2: {}\n", .{part1, part2});
+        const height = grid.data[best.index];
+        if (part2 == null and height == 'a') {
+            part2 = best.distance;
+        }
+
+        if (best.index == start_idx) {
+            break best.distance;
+        }
+
+        for ([_]usize {
+            best.index - grid.pitch,
+            best.index - 1,
+            best.index + 1,
+            best.index + grid.pitch,
+        }) |neighbor| {
+            const char = grid.data[neighbor];
+            if (char != '#' and char + 1 >= height) {
+                if (best_dist[neighbor] > best.distance + 1) {
+                    best_dist[neighbor] = best.distance + 1;
+                    prev[neighbor] = best.index;
+                    try queue.add(.{
+                        .index = neighbor,
+                        .distance = best.distance + 1,
+                    });
+                }
+            }
+        }
+    } else unreachable;
+
+    print("part1: {}\npart2: {}\n", .{part1, part2.?});
 }
+
+fn queueComp(_: void, a: Entry, b: Entry) std.math.Order {
+    return std.math.order(a.distance, b.distance);
+}
+
 
 // Useful stdlib functions
 const tokenize = std.mem.tokenize;

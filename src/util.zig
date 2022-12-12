@@ -83,6 +83,13 @@ pub const Grid = struct {
         return y * self.pitch + x + self.offset;
     }
 
+    pub fn factor(self: Self, index: usize) struct{ x: usize, y: usize } {
+        return .{
+            .x = (index - self.offset) % self.pitch,
+            .y = (index - self.offset) / self.pitch,
+        };
+    }
+
     pub fn at(self: Self, x: usize, y: usize) u8 {
         return self.data[self.indexOf(x, y)];
     }
