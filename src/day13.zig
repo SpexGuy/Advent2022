@@ -87,40 +87,41 @@ fn compareValues(
     }
 }
 
-fn lessThanFn(_: void, a: []const u8, b: []const u8) bool {
+fn lessThan(a: []const u8, b: []const u8) bool {
     var a_idx: usize = 0;
     var b_idx: usize = 0;
     return compareValues(a, &a_idx, b, &b_idx) == .lt;
 }
 
 pub fn main() !void {
-    var items = List([]const u8).init(gpa);
-
     var part1: usize = 0;
+    const divider_a = "[[2]]";
+    const divider_b = "[[6]]";
+    var divider_a_index: usize = 1;
+    var divider_b_index: usize = 1;
+
     var lines = split(u8, data, "\n");
     var pair_index: usize = 1;
     while (lines.next()) |first| : (pair_index += 1) {
         const second = lines.next().?;
         const third = lines.next();
         assert(third == null or third.?.len == 0);
-        try items.append(first);
-        try items.append(second);
-        if (lessThanFn({}, first, second)) {
+        if (lessThan(first, second)) {
             part1 += pair_index;
         }
+        if (lessThan(first, divider_a)) {
+            divider_a_index += 1;
+        } else if (lessThan(first, divider_b)) {
+            divider_b_index += 1;
+        }
+        if (lessThan(second, divider_a)) {
+            divider_a_index += 1;
+        } else if (lessThan(second, divider_b)) {
+            divider_b_index += 1;
+        }
     }
-
-    const divider_a = "[[2]]";
-    const divider_b = "[[6]]";
-    try items.append(divider_a);
-    try items.append(divider_b);
-    std.sort.sort([]const u8, items.items, {}, lessThanFn);
-
-    var part2: usize = 1;
-    for (items.items) |item, i| {
-        if (item.ptr == divider_a) part2 *= (i+1);
-        if (item.ptr == divider_b) part2 *= (i+1);
-    }
+    divider_b_index += divider_a_index;
+    const part2 = divider_a_index * divider_b_index;
 
     print("part1: {}\npart2: {}\n", .{part1, part2});
 }
