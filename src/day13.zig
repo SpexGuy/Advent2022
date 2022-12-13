@@ -10,33 +10,116 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day13.txt");
 
-const Item = struct {
-    v: i64,
+fn parseNumber(text: []const u8, pos: *usize) u64 {
+    const start = pos.*;
+    assert(text[start] >= '0' and text[start] <= '9');
+    var end = start;
+    while (text[end] >= '0' and text[end] <= '9') end += 1;
+    pos.* = end;
+    return parseInt(u64, text[start..end], 10) catch unreachable;
+}
 
-};
+fn compareNumberNumber(a: u64, b: u64) std.math.Order {
+    return std.math.order(a, b);
+}
 
-pub fn main() !void {
-    var part1: i64 = 0;
-    var part2: i64 = 0;
-
-    var items_list = List(Item).init(gpa);
-    var lines = tokenize(u8, data, "\n\r");
-    while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        const v = parts.next().?;
-
-        assert(parts.next() == null);
-
-        try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
-        });
+fn compareListNumber(text: []const u8, pos: *usize, number: u64) std.math.Order {
+    if (text[pos.*] == '[') {
+        pos.* += 1;
+        const result = compareListNumber(text, pos, number);
+        if (result != .eq) return result;
+    } else if (text[pos.*] == ']') {
+        return .lt;
+    } else {
+        const result = compareNumberNumber(parseNumber(text, pos), number);
+        if (result != .eq) return result;
     }
 
-    const items = items_list.items;
+    if (text[pos.*] == ']') {
+        pos.* += 1;
+        return .eq;
+    }
+    return .gt;
+}
 
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
+fn compareValues(
+    first: []const u8, first_pos: *usize,
+    second: []const u8, second_pos: *usize,
+) std.math.Order {
+    const first_list = first[first_pos.*] == '[';
+    const second_list = second[second_pos.*] == '[';
+    
+    if (first_list and second_list) {
+        first_pos.* += 1;
+        second_pos.* += 1;
+        while (true) {
+            const end_first = first[first_pos.*] == ']';
+            const end_second = second[second_pos.*] == ']';
+            if (first[first_pos.*] == ']' or first[first_pos.*] == ',') {
+                first_pos.* += 1;
+            }
+            if (second[second_pos.*] == ']' or second[second_pos.*] == ',') {
+                second_pos.* += 1;
+            }
+
+            if (end_first and end_second) return .eq;
+            if (end_first) return .lt;
+            if (end_second) return .gt;
+
+            const cmp = compareValues(first, first_pos, second, second_pos);
+            if (cmp != .eq) return cmp;
+        }
+    } else if (first_list) {
+        first_pos.* += 1;
+        return compareListNumber(first, first_pos, parseNumber(second, second_pos));
+    } else if (second_list) {
+        second_pos.* += 1;
+        const result = compareListNumber(second, second_pos, parseNumber(first, first_pos));
+        return switch (result) {
+            .gt => .lt,
+            .eq => .eq,
+            .lt => .gt,
+        };
+    } else {
+        const a = parseNumber(first, first_pos);
+        const b = parseNumber(second, second_pos);
+        return compareNumberNumber(a, b);
+    }
+}
+
+fn lessThanFn(_: void, a: []const u8, b: []const u8) bool {
+    var a_idx: usize = 0;
+    var b_idx: usize = 0;
+    return compareValues(a, &a_idx, b, &b_idx) == .lt;
+}
+
+pub fn main() !void {
+    var items = List([]const u8).init(gpa);
+
+    var part1: usize = 0;
+    var lines = split(u8, data, "\n");
+    var pair_index: usize = 1;
+    while (lines.next()) |first| : (pair_index += 1) {
+        const second = lines.next().?;
+        const third = lines.next();
+        assert(third == null or third.?.len == 0);
+        try items.append(first);
+        try items.append(second);
+        if (lessThanFn({}, first, second)) {
+            part1 += pair_index;
+        }
+    }
+
+    const divider_a = "[[2]]";
+    const divider_b = "[[6]]";
+    try items.append(divider_a);
+    try items.append(divider_b);
+    std.sort.sort([]const u8, items.items, {}, lessThanFn);
+
+    var part2: usize = 1;
+    for (items.items) |item, i| {
+        if (item.ptr == divider_a) part2 *= (i+1);
+        if (item.ptr == divider_b) part2 *= (i+1);
     }
 
     print("part1: {}\npart2: {}\n", .{part1, part2});
