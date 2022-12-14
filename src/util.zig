@@ -152,6 +152,38 @@ pub const Grid = struct {
         };
     }
 
+    pub fn create(
+        width: usize,
+        height: usize,
+        fill_char: u8,
+        border: u8,
+        border_size: usize,
+    ) !Self {
+        const pitch = width + 2*border_size + 1;
+        const offset = border_size * pitch + border_size;
+        const allocated_height = height + 2*border_size;
+        const grid_data = try gpa.alloc(u8, pitch * allocated_height);
+        if (border_size != 0) {
+            std.mem.set(u8, grid_data, border);
+        }
+        var y: usize = 0;
+        while (y < height) : (y += 1) {
+            std.mem.set(u8, grid_data[y * pitch + offset..][0..width], fill_char);
+        }
+        var linebrk = pitch - 1;
+        while (linebrk < grid_data.len) : (linebrk += pitch) {
+            grid_data[linebrk] = '\n';
+        }
+
+        return Self{
+            .data = grid_data,
+            .width = width,
+            .height = height,
+            .pitch = pitch,
+            .offset = offset,
+            .border = border_size,
+        };
+    }
     pub fn clone(self: Self) Self {
         var new = self;
         new.data = gpa.dupe(u8, self.data);
