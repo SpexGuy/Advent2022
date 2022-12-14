@@ -74,7 +74,9 @@ const abs = util.abs;
 const expect = util.expect;
 const sortField = util.sortField;
 const sliceGroup = util.sliceGroup;
+const Bounds = util.Bounds;
 const Grid = util.Grid;
+const Point = util.Point;
 
 // Generated from template/template.zig.
 // Run `zig build generate` to update.
