@@ -10,25 +10,8 @@ const gpa = util.gpa;
 
 const data = @embedFile("data/day14.txt");
 
-const Point = struct {
-    x: usize,
-    y: usize,
-};
-
-const Bounds = struct {
-    min: Point = .{ .x = ~@as(usize, 0), .y = ~@as(usize, 0) },
-    max: Point = .{ .x = 0, .y = 0 },
-
-    pub fn expand(self: *Bounds, pt: Point) void {
-        self.min.x = min2(self.min.x, pt.x);
-        self.min.y = min2(self.min.y, pt.y);
-        self.max.x = max2(self.max.x, pt.x);
-        self.max.y = max2(self.max.y, pt.y);
-    }
-};
 
 pub fn main() !void {
-    var timer = try std.time.Timer.start();
     var bounds = Bounds{};
 
     var items_list = List([2]Point).init(gpa);
@@ -91,12 +74,10 @@ pub fn main() !void {
         }
     }
 
-    var part1: usize = 0;
-    var part2: usize = 0;
-
     grid.data[grid.indexOf(500 - bounds.min.x, 0) - grid.pitch] = '+';
     std.mem.set(u8, grid.data[grid.indexOf(0, floor - bounds.min.y)..][0..grid.width], '-');
 
+    var part1: usize = 0;
     var grains_rested: usize = 0;
     while (true) {
         var sp = grid.indexOf(500 - bounds.min.x, 0);
@@ -123,10 +104,9 @@ pub fn main() !void {
             break;
         }
     }
-    part2 = grains_rested;
-    const time = timer.read();
+    const part2 = grains_rested;
 
-    print("part1: {}\npart2: {}\ntime: {}\n", .{part1, part2, time});
+    print("part1: {}\npart2: {}\n", .{part1, part2});
 }
 
 // Useful stdlib functions
@@ -161,7 +141,9 @@ const abs = util.abs;
 const expect = util.expect;
 const sortField = util.sortField;
 const sliceGroup = util.sliceGroup;
+const Bounds = util.Bounds;
 const Grid = util.Grid;
+const Point = util.Point;
 
 // Generated from template/template.zig.
 // Run `zig build generate` to update.

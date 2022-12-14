@@ -191,6 +191,23 @@ pub const Grid = struct {
     }
 };
 
+pub const Point = struct {
+    x: usize = 0,
+    y: usize = 0,
+};
+
+pub const Bounds = struct {
+    min: Point = .{ .x = std.math.maxInt(usize), .y = std.math.maxInt(usize) },
+    max: Point = .{ .x = std.math.minInt(usize), .y = std.math.minInt(usize) },
+
+    pub fn expand(self: *Bounds, pt: Point) void {
+        self.min.x = min2(self.min.x, pt.x);
+        self.min.y = min2(self.min.y, pt.y);
+        self.max.x = max2(self.max.x, pt.x);
+        self.max.y = max2(self.max.y, pt.y);
+    }
+};
+
 // Useful stdlib functions
 const tokenize = std.mem.tokenize;
 const split = std.mem.split;
@@ -207,9 +224,9 @@ const sliceMax = std.mem.max;
 const parseInt = std.fmt.parseInt;
 const parseFloat = std.fmt.parseFloat;
 
-const min = std.math.min;
+const min2 = std.math.min;
 const min3 = std.math.min3;
-const max = std.math.max;
+const max2 = std.math.max;
 const max3 = std.math.max3;
 
 const print = std.debug.print;
