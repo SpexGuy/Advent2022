@@ -11,8 +11,32 @@ const gpa = util.gpa;
 const data = @embedFile("data/day15.txt");
 
 const Item = struct {
-    v: i64,
+    sx: i64,
+    sy: i64,
+    bx: i64,
+    by: i64,
+    dist: i64,
+};
 
+const Range = struct {
+    min: i64,
+    max: i64,
+
+    fn overlaps(self: Range, other: Range) bool {
+        return self.min <= other.max and self.max + 1 >= other.min or
+            other.min <= self.max and other.max + 1 >= self.min;
+    }
+
+    fn constrain(self: *Range, other: Range) bool {
+        self.min = max2(self.min, other.min);
+        self.max = min2(self.max, other.max);
+        return self.min <= self.max;
+    }
+
+    fn combine(self: *Range, other: Range) void {
+        self.min = min2(self.min, other.min);
+        self.max = max2(self.max, other.max);
+    }
 };
 
 pub fn main() !void {
@@ -22,21 +46,97 @@ pub fn main() !void {
     var items_list = List(Item).init(gpa);
     var lines = tokenize(u8, data, "\n\r");
     while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        const v = parts.next().?;
-
+        var parts = tokenize(u8, line, "Sensor atx=,y=:closestbeaconisat");
+        const sx = try parseInt(i64, parts.next().?, 10);
+        const sy = try parseInt(i64, parts.next().?, 10);
+        const bx = try parseInt(i64, parts.next().?, 10);
+        const by = try parseInt(i64, parts.next().?, 10);
         assert(parts.next() == null);
 
         try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
+            .sx = sx,
+            .sy = sy,
+            .bx = bx,
+            .by = by,
+            .dist = abs(bx - sx) + abs(by - sy),
         });
     }
 
     const items = items_list.items;
 
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
+    var ranges = List(Range).init(gpa);
+    var row: i64 = 0;
+    const bigmax = 4000000;
+    const part1_row = 2000000;
+    done: while (row < bigmax) : (row += 1) {
+        for (items) |it| {
+            const dist = abs(row - it.sy);
+            const remain = it.dist - dist;
+            if (remain >= 0) {
+                const range = Range{
+                    .min = it.sx - remain,
+                    .max = it.sx + remain,
+                };
+                var i: usize = 0;
+                while (i < ranges.items.len) : (i += 1) {
+                    if (ranges.items[i].overlaps(range)) {
+                        ranges.items[i].combine(range);
+                        while (i < ranges.items.len-1) {
+                            if (!ranges.items[i].overlaps(ranges.items[i+1])) {
+                                break;
+                            }
+                            ranges.items[i].combine(ranges.items[i+1]);
+                            _ = ranges.orderedRemove(i+1);
+                        }
+                        break;
+                    }
+                } else {
+                    for (ranges.items) |other, j| {
+                        if (other.min > range.min) {
+                            try ranges.insert(j, range);
+                            break;
+                        }
+                    } else {
+                        try ranges.append(range);
+                    }
+                }
+            }
+        }
+
+        if (row == part1_row) {
+            for (ranges.items) |range| {
+                part1 += (range.max - range.min + 1);
+            }
+
+            var beacons = Map(i64, void).init(gpa);
+            for (items) |it| {
+                if (it.by == row) {
+                    if ((try beacons.fetchPut(it.bx, {})) == null) {
+                        part1 -= 1;
+                    }
+                }
+            }
+
+            if (part2 != 0) break :done;
+        }
+
+        for (ranges.items) |*range| {
+            if (range.constrain(Range{.min = 0, .max = bigmax})) {
+                if (range.min > 0) {
+                    part2 = (range.min-1) * bigmax + row;
+                    if (part1 != 0) break :done;
+                    row = part1_row - 1;
+                    break;
+                } else if (range.max < bigmax) {
+                    part2 = (range.max+1) * bigmax + row;
+                    if (part1 != 0) break :done;
+                    row = part1_row - 1;
+                    break;
+                }
+            }
+        }
+
+        ranges.clearRetainingCapacity();
     }
 
     print("part1: {}\npart2: {}\n", .{part1, part2});
