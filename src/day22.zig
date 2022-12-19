@@ -8,7 +8,11 @@ const BitSet = std.StaticBitSet;
 const util = @import("util.zig");
 const gpa = util.gpa;
 
-const data = @embedFile("data/day22.txt");
+const data = file_data;
+const file_data = @embedFile("data/day22.txt");
+const test_data =
+\\
+;
 
 const Item = struct {
     v: i64,
@@ -23,15 +27,11 @@ pub fn main() !void {
     var lines = tokenize(u8, data, "\n\r");
     while (lines.next()) |line| {
         var parts = split(u8, line, " ");
-        const v = parts.next().?;
-
-        assert(parts.next() == null);
-
         try items_list.append(.{
-            .v = try parseInt(i64, v, 10),
+            .v = try parseInt(i64, parts.next().?, 10),
         });
+        assert(parts.next() == null);
     }
-
     const items = items_list.items;
 
     // Do stuff
