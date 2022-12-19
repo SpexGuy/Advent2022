@@ -6,7 +6,7 @@ const required_zig_version = std.SemanticVersion.parse("0.10.0") catch unreachab
 const padded_int_fix = std.SemanticVersion.parse("0.11.0-dev.331+304e82808") catch unreachable;
 
 /// set this to true to link libc
-const should_link_libc = false;
+const should_link_libc = true;
 
 fn linkObject(b: *Builder, obj: *LibExeObjStep) void {
     if (should_link_libc) obj.linkLibC();
