@@ -71,7 +71,7 @@ fn simulateBlueprint(bp: Item, sim_len: u32, id: usize) !u32 {
         const values = states.values();
         for (states.keys()) |*s, i| {
             const curr_score = values[i];
-            if (minute >= 19 and maxScore(s, curr_score, sim_len - minute) < best_known) {
+            if (minute >= 19 and maxScore(s, curr_score, sim_len - minute) <= best_known) {
                 culled += 1;
                 continue;
             }
@@ -80,27 +80,6 @@ fn simulateBlueprint(bp: Item, sim_len: u32, id: usize) !u32 {
             ns.ore += ns.ore_r;
             ns.clay += ns.clay_r;
             ns.obs += ns.obs_r;
-            try putState(&next_states, &ns, curr_score);
-            if (s.ore >= bp.ore_r_ore_cost) {
-                var ns2 = ns;
-                ns2.ore = ns.ore - bp.ore_r_ore_cost;
-                ns2.ore_r = ns.ore_r + 1;
-                try putState(&next_states, &ns2, curr_score);
-            }
-            if (s.ore >= bp.clay_r_ore_cost) {
-                var ns2 = ns;
-                ns2.ore = ns.ore - bp.clay_r_ore_cost;
-                ns2.clay_r = ns.clay_r + 1;
-                try putState(&next_states, &ns2, curr_score);
-            }
-            if (s.ore >= bp.obs_r_ore_cost and
-                s.clay >= bp.obs_r_clay_cost) {
-                var ns2 = ns;
-                ns2.ore = ns.ore - bp.obs_r_ore_cost;
-                ns2.clay = ns.clay - bp.obs_r_clay_cost;
-                ns2.obs_r = ns.obs_r + 1;
-                try putState(&next_states, &ns2, curr_score);
-            }
             if (s.ore >= bp.geode_r_ore_cost and
                 s.obs >= bp.geode_r_obs_cost) {
                 var ns2 = ns;
@@ -109,6 +88,28 @@ fn simulateBlueprint(bp: Item, sim_len: u32, id: usize) !u32 {
                 ns2.geode_r = ns.geode_r + 1;
                 try putState(&next_states, &ns2, curr_score + sim_len - 1 - minute);
                 best_known = @max(best_known, curr_score);
+            } else {
+                try putState(&next_states, &ns, curr_score);
+                if (s.ore >= bp.ore_r_ore_cost) {
+                    var ns2 = ns;
+                    ns2.ore = ns.ore - bp.ore_r_ore_cost;
+                    ns2.ore_r = ns.ore_r + 1;
+                    try putState(&next_states, &ns2, curr_score);
+                }
+                if (s.ore >= bp.clay_r_ore_cost) {
+                    var ns2 = ns;
+                    ns2.ore = ns.ore - bp.clay_r_ore_cost;
+                    ns2.clay_r = ns.clay_r + 1;
+                    try putState(&next_states, &ns2, curr_score);
+                }
+                if (s.ore >= bp.obs_r_ore_cost and
+                    s.clay >= bp.obs_r_clay_cost) {
+                    var ns2 = ns;
+                    ns2.ore = ns.ore - bp.obs_r_ore_cost;
+                    ns2.clay = ns.clay - bp.obs_r_clay_cost;
+                    ns2.obs_r = ns.obs_r + 1;
+                    try putState(&next_states, &ns2, curr_score);
+                }
             }
         }
 
