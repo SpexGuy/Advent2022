@@ -21,8 +21,8 @@ const test_data =
 ;
 
 fn pathfind(grid: *Grid, from: usize, to: usize) !usize {
-    var positions = std.AutoArrayHashMap(usize, void).init(gpa);
-    try positions.put(from, {});
+    var positions = List(usize).init(gpa);
+    try positions.append(from);
 
     var iter: usize = 0;
     while (true) : (iter += 1) {
@@ -69,18 +69,20 @@ fn pathfind(grid: *Grid, from: usize, to: usize) !usize {
             }
         }
         // Update positions
-        var new_positions = std.AutoArrayHashMap(usize, void).init(gpa);
-        for (positions.keys()) |key| {
+        var new_positions = List(usize).init(gpa);
+        try new_positions.ensureTotalCapacity(positions.capacity);
+        for (positions.items) |item| {
             for ([_]usize{
-                key - grid.pitch,
-                key - 1,
-                key,
-                key + 1,
-                key + grid.pitch, 
+                item - grid.pitch,
+                item - 1,
+                item,
+                item + 1,
+                item + grid.pitch, 
             }) |next| {
                 if (new_grid[next] == 0) {
                     if (next == to) return iter + 1;
-                    try new_positions.put(next, {});
+                    try new_positions.append(next);
+                    new_grid[next] |= 32;
                 }
             }
         }
@@ -91,6 +93,7 @@ fn pathfind(grid: *Grid, from: usize, to: usize) !usize {
 }
 
 pub fn main() !void {
+    var timer = try std.time.Timer.start();
     var grid = try Grid.load(data, '#', 1);
 
     for (grid.data) |*ch| {
@@ -113,7 +116,9 @@ pub fn main() !void {
     part2 += try pathfind(&grid, end, start);
     part2 += try pathfind(&grid, start, end);
 
-    print("part1: {}\npart2: {}\n", .{part1, part2});
+    const elapsed = timer.read();
+
+    print("part1: {}\npart2: {}\ntimer: {}\n", .{part1, part2, elapsed});
 }
 
 // Useful stdlib functions
