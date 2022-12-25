@@ -8,38 +8,40 @@ const BitSet = std.StaticBitSet;
 const util = @import("util.zig");
 const gpa = util.gpa;
 
-const data = file_data;
-const file_data = @embedFile("data/day25.txt");
-const test_data =
-\\
-;
-
-const Item = struct {
-    v: i64,
-
-};
+const data = @embedFile("data/day25.txt");
 
 pub fn main() !void {
-    var part1: i64 = 0;
-    var part2: i64 = 0;
+    var total: i64 = 0;
 
-    var items_list = List(Item).init(gpa);
     var lines = tokenize(u8, data, "\n\r");
     while (lines.next()) |line| {
-        var parts = split(u8, line, " ");
-        try items_list.append(.{
-            .v = try parseInt(i64, parts.next().?, 10),
-        });
-        assert(parts.next() == null);
+        var value: i64 = 0;
+        for (line) |ch| {
+            const digit: i64 = switch (ch) {
+                '=' => -2,
+                '-' => -1,
+                '0' => 0,
+                '1' => 1,
+                '2' => 2,
+                else => unreachable,
+            };
+            value *= 5;
+            value += digit;
+        }
+        total += value;
     }
-    const items = items_list.items;
 
-    // Do stuff
-    for (items) |it| {
-        _ = &it;
+    var mem: [32]u8 = undefined;
+    var memi: usize = 32;
+    while (total != 0) {
+        const digit = @mod(total, 5);
+        total = @divTrunc(total, 5);
+        memi -= 1;
+        mem[memi] = "012=-"[@intCast(usize, digit)];
+        total += @boolToInt(digit >= 3);
     }
 
-    print("part1: {}\npart2: {}\n", .{part1, part2});
+    print("{s}\n", .{mem[memi..]});
 }
 
 // Useful stdlib functions
